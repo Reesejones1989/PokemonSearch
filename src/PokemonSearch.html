@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokémon Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    input {
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    img {
+      max-width: 200px;
+      margin: 20px 0;
+    }
+    .error {
+      color: red;
+    }
+    #statsButton {
+      display: none; /* Hide the Stats button by default */
+    }
+    #stats {
+      display: none; /* Hide the stats section by default */
+    }
+    .favorites-list {
+      margin-top: 20px;
+      text-align: left;
+    }
+    .favorite-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .favorite-item img {
+      max-width: 50px;
+      margin-right: 10px;
+    }
+    .star-button {
+      font-size: 20px;
+      color: gold;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+    .remove-button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+    .remove-button:hover {
+      background-color: darkred;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pokémon Search</h1>
+  <input id="pokemonInput" type="text" placeholder="Enter Pokémon name or ID" />
+  <button onclick="searchPokemon()">Search</button>
+  <div id="result"></div>
+
+  <!-- Stats button is initially hidden -->
+  <button id="statsButton" onclick="showStats()">Stats</button>
+  <div id="stats"></div>
+
+  <!-- Favorites list -->
+  <h2>Favorites</h2>
+  <div id="favoritesList" class="favorites-list"></div>
+
+  <script>
+    let currentPokemon = null; // Keep track of the current Pokémon
+    const favorites = []; // Array to store favorite Pokémon
+
+    async function searchPokemon() {
+      const pokemonName = document.getElementById('pokemonInput').value.trim().toLowerCase();
+      const resultDiv = document.getElementById('result');
+      const statsButton = document.getElementById('statsButton');
+      const statsDiv = document.getElementById('stats');
+
+      resultDiv.innerHTML = ''; // Clear previous results
+      statsButton.style.display = 'none'; // Hide the Stats button initially
+      statsDiv.style.display = 'none'; // Hide the stats section
+      statsDiv.innerHTML = ''; // Clear the stats section
+
+      if (!pokemonName) {
+        resultDiv.innerHTML = '<p class="error">Please enter a Pokémon name or ID.</p>';
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`);
+        if (!response.ok) throw new Error('Pokémon not found');
+        const pokemon = await response.json();
+
+        // Update the current Pokémon
+        currentPokemon = pokemon;
+
+        resultDiv.innerHTML = `
+          <h2>${pokemon.name.toUpperCase()}</h2>
+          <img src="${pokemon.sprites.front_default}" alt="${pokemon.name}" />
+          <p> Pokémon ID #: ${pokemon.id} </p>
+          <p><strong>Height:</strong> ${pokemon.height}</p>
+          <p><strong>Weight:</strong> ${pokemon.weight}</p>
+          <p><strong>Types:</strong> ${pokemon.types.map(typeInfo => typeInfo.type.name.toUpperCase()).join(', ')}</p>
+          <button class="star-button" onclick="addToFavorites()">⭐ Add to Favorites</button>
+        `;
+
+        statsButton.style.display = 'inline-block'; // Show the Stats button after a successful search
+      } catch (error) {
+        resultDiv.innerHTML = '<p class="error">Pokémon not found. Please try again.</p>';
+        currentPokemon = null; // Clear the current Pokémon
+      }
+    }
+
+    function addToFavorites() {
+      if (!currentPokemon) return; // Don't allow adding if no Pokémon is selected
+
+      // Check if the Pokémon is already in the favorites list
+      if (favorites.some(fav => fav.name === currentPokemon.name)) {
+        alert(`${currentPokemon.name.toUpperCase()} is already in your favorites!`);
+        return;
+      }
+
+      // Add the current Pokémon to the favorites list
+      favorites.push({
+        name: currentPokemon.name,
+        image: currentPokemon.sprites.front_default,
+      });
+
+      updateFavoritesList();
+    }
+
+    function removeFromFavorites(pokemonName) {
+      // Remove the Pokémon with the specified name from the favorites list
+      const index = favorites.findIndex(fav => fav.name === pokemonName);
+      if (index !== -1) {
+        favorites.splice(index, 1);
+        updateFavoritesList(); // Update the favorites list
+      }
+    }
+
+    function updateFavoritesList() {
+      const favoritesList = document.getElementById('favoritesList');
+      favoritesList.innerHTML = '';
+
+      favorites.forEach(pokemon => {
+        const favoriteItem = document.createElement('div');
+        favoriteItem.className = 'favorite-item';
+        favoriteItem.innerHTML = `
+          <img src="${pokemon.image}" alt="${pokemon.name}" />
+          <p>${pokemon.name.toUpperCase()}</p>
+          <button class="remove-button" onclick="removeFromFavorites('${pokemon.name}')">Remove</button>
+        `;
+        favoritesList.appendChild(favoriteItem);
+      });
+    }
+
+    async function showStats() {
+      const statsDiv = document.getElementById('stats');
+      statsDiv.innerHTML = '';
+
+      if (!currentPokemon) {
+        statsDiv.innerHTML = '<p class="error">No Pokémon selected. Please search for a Pokémon first.</p>';
+        return;
+      }
+
+      try {
+        statsDiv.innerHTML = `
+          <h3>Stats for ${currentPokemon.name.toUpperCase()}</h3>
+          <p><strong>Base Stats:</strong></p>
+          <ul>
+            ${currentPokemon.stats
+              .map(stat => `<li>${stat.stat.name.toUpperCase()}: ${stat.base_stat}</li>`)
+              .join('')}
+          </ul>
+        `;
+        statsDiv.style.display = 'block'; // Show the stats section when the Stats button is clicked
+      } catch (error) {
+        statsDiv.innerHTML = '<p class="error">Error displaying stats. Please try again.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

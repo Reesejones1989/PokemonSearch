@@ -1,0 +1,14 @@
+.Nav {
+    display: flex;
+    justify-content: space-around; /* or use 'space-between', 'center', etc. depending on your preference */
+    align-items: center;
+    padding: 10px; /* Optional: Adds some padding around the nav */
+  }
+  
+  .Nav a {
+    text-decoration: none;
+    color: black; /* You can customize the color */
+    font-weight: bold; /* Optional: Makes the text bold */
+    margin: 0 10px; /* Adds spacing between the links */
+  }
+  

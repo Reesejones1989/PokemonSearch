@@ -1,0 +1,54 @@
+const express = require('express');
+const axios = require('axios');
+import PokemonSearch from './PokemonSearch'
+const app = express();
+const PORT = 8080;
+
+// Base URL for PokeAPI
+const API_BASE_URL = 'https://pokeapi.co/api/v2/pokemon';
+
+/**
+ * Fetches basic information about a Pokémon by name or ID.
+ * @param {string | number} identifier - Pokémon name or ID.
+ * @returns {Promise<object>} - Pokémon name, image URL, and other basic info.
+ */
+async function getPokemonData(identifier) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${identifier}`);
+    const data = response.data;
+
+    // Extract relevant information
+    const pokemonInfo = {
+      name: data.name,
+      image: data.sprites.front_default,
+      height: data.height,
+      weight: data.weight,
+      types: data.types.map(typeInfo => typeInfo.type.name),
+    };
+
+    return pokemonInfo;
+  } catch (error) {
+    console.error(`Error fetching data for Pokémon: ${identifier}`, error.message);
+    throw new Error('Failed to fetch Pokémon data. Please try again.');
+  }
+}
+
+// API endpoint to fetch Pokémon data
+app.get('/pokemon', async (req, res) => {
+  const { name } = req.query;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Please provide a Pokémon name or ID as a query parameter.' });
+  }
+
+  try {
+    const pokemon = await getPokemonData(name.toLowerCase());
+    res.json(pokemon);
+  } catch (error) {
+    res.status(404).json({ error: 'Pokémon not found. Please check the name or ID.' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
