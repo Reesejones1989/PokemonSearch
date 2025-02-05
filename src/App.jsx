@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
+
 import PokemonSearch from "./PokemonSearch";
 import "./PokemonSearch.css";
 import pokemonLogo from "./assets/PokeLogo.svg";
